@@ -1,6 +1,6 @@
 const mongoose=require('mongoose');
-exports.connectMongoose= ()=>{
-    mongoose.connect("mongodb+srv://AveshKumar:AveshKumar33@cluster0.syb9smm.mongodb.net/company")
+exports.connectMongoose= function(){
+    mongoose.connect("mongodb+srv://AveshKumar:AveshKumar33@cluster0.jbyq6le.mongodb.net/company?retryWrites=true&w=majority")
     .then((e)=>console.log('my visual studio is connect with mongodb atlas'))
     .catch((e)=>console.log(e));
 };
@@ -23,4 +23,4 @@ const EmployeeSchema= new Schema({
         unique:true
     }
 });
-exports.Employee=mongoose.model('Employee',EmployeeSchema);
+exports.Employees = mongoose.model('Employee',EmployeeSchema);
