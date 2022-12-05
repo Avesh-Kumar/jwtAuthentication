@@ -1,66 +1,112 @@
 const express = require('express');
-
-const { Employees, connectMongoose } = require("./db.js");
-//const ejs =require('ejs')
+const jwt = require('jsonwebtoken');
+const cookieParser= require('cookie-parser');
+const { Employee } = require('./db')
+const empModel = require('./employeeModel/dal')
+const ejs = require('ejs')
+const mongoose = require('mongoose');
+const key = "my name is avesh kumarjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjdssadsdwdf";
+mongoose.connect("mongodb+srv://AveshKumar:AveshKumar33@cluster0.jbyq6le.mongodb.net/company?retryWrites=true&w=majority")
+    .then((e) => console.log('my visual studio is connect with mongodb atlas'))
+    .catch((e) => console.log(e));
 var app = express();
-connectMongoose();
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 app.set("views", __dirname);
 app.set("view engine", "ejs");
 
-app.get('/', (req, res) => {
-    res.render("home");
+app.get('/exist', (req, res) => {
+    res.render("home", { title: "employee already exist" });
+});
+app.get('/save', (req, res) => {
+    res.render("home", { title: "employee register successfully" });
+});
+app.get('/loginsuccess', (req, res) => {
+    res.render("home", { title: "employee login success" });
+});
+app.get('/jwtverify', (req, res) => {
+    res.render("home", { title: "employee verify success" });
+});
+app.get('/loginfail', (req, res) => {
+    res.render("home", { title: "you are not register person" })
 })
-app.get('/user', async (req, res) => {
-    try {
-        let data = await Employees.find();
-        res.status(200).send(data);
-    } catch (e) {
-        res.status(409).send(e.message);
-    }
+app.get('/', (req, res) => {
+    res.render("home", { title: "welcome to JWT authentication" });
 })
 
-app.get('/register',(req,res)=>{
-    res.render('register')
+app.get('/register', (req, res) => {
+    res.render('register', { title: "welcome to registration form" })
 })
+app.get('/login', (req, res) => {
+    res.render('login', { title: "welcome to log-in page" });
+});
+
+app.get('/user',async (req, res) => {
+    //jwt.verify(req.token, key);
+    const token =  req.headers.authorization;
+     await jwt.verify(token, key);
+    let data = await Employee.find({});
+    res.send(data);
+    //res.render('employee',{data});
+
+    
+});
+
 
 
 app.post('/register', async (req, res) => {
-    let data = req.body;
-    // console.log(data)
-    // try{
-    // let user = await Employees.create({name:data.name,email:data.email,password:data.password});
-    // res.send(user)
-    // }catch(e){
-    //     res.send(e.message);
-    //}
 
-    let user = await Employees.find({ email: data.email });
-    //let jsonUser = JSON.stringify(user)
-    //let newUser = JSON.parse(jsonUser)
-    //console.log(user.length===0)
-    //console.log(user === undefined)
+    await empModel.register(req, res);
 
-    if (user.length === 0) {
-        try {
-            let user = await Employees.create({ name: data.name, email: data.email, password: data.password });
-            res.send('new registration');
-            //res.render("success");
-        } catch (e) {
-            res.send(e.message);
-            //res.render("error");     
-        }
+    res.redirect('/save');
+});
+
+app.post('/log-in', async (req, res) => {
+    console.log(req.body);
+
+    let emp = await Employee.findOne({ email: req.body.email });
+    console.log(emp);
+    if (!emp) {
+        res.redirect('/loginfail');
     }
     else {
-
-        res.send('user is already exist')
-        //res.render("exist");
-
+        console.log((emp._id).toString())
+        const user={
+            _id: ((emp._id).toString()),
+            email:emp.email
+        }
+        const token = jwt.sign(user, key ,{ expiresIn: '10m'});
+        console.log(token);
+        res.json({ token });
     }
+})
+// function verifyToken(req, res, next) {
+//     console.log('avesh here -------1');
+//     const vtoken = req.headers.authorization;
+//     console.log(vtoken);
+//     if (vtoken !== undefined) {
+//         const tok = vtoken.split('.');
+//         req.token = tok[1];
+//         console.log(req.token);
+//         next();
+//     }
 
+// }
+
+
+
+app.post('/jwt', (req, res) => {
+    console.log("Inside JWT");
+    const token =  req.headers.authorization;
+    console.log(token);
+    const data = jwt.verify(token, key);
+    console.log(data);
+    res.send(data)
+    // console.log(req.token,'pppppppp');
+    // const data = jwt.verify(req.token, key);
+    // console.log(data);
 })
 
-app.listen(5000, () => {
-    console.log('server is listenning port 5000');
+app.listen(3000, () => {
+    console.log('server is listenning port 3000');
 })
